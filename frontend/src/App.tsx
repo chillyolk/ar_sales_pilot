@@ -8,9 +8,15 @@ import ChatPanel from './components/ChatPanel'
 import OfferPanel from './components/OfferPanel'
 import VideoPlayer from './components/VideoPlayer'
 import VoicePanel from './components/VoicePanel'
-import type { ChatMessage, DetectResponse, Offer, PartDetection, VehicleDetection } from './types'
+import type { ChatMessage, DetectResponse, Offer, PartDetection, VehicleDetection, VehicleProfile } from './types'
 
 const DEFAULT_VIDEO = '/videos/demo-car.mp4'
+
+const VEHICLE_PROFILES: VehicleProfile[] = [
+  { brand: 'Tesla', model: 'Model Y', label: 'Tesla Model Y' },
+  { brand: '小米汽车', model: 'SU7', label: '小米 SU7' },
+  { brand: '演示品牌', model: '演示车型', label: '通用演示车型' },
+]
 
 type RecognitionConstructor = new () => SpeechRecognition
 
@@ -52,7 +58,10 @@ export default function App() {
   const inFlightRef = useRef(false)
   const frameIdRef = useRef(0)
   const lastDetectionRef = useRef<DetectResponse | null>(null)
+  const objectUrlRef = useRef<string | null>(null)
   const [videoSrc, setVideoSrc] = useState(DEFAULT_VIDEO)
+  const [videoName, setVideoName] = useState('默认演示视频')
+  const [vehicleProfile, setVehicleProfile] = useState<VehicleProfile>(VEHICLE_PROFILES[0])
   const [detection, setDetection] = useState<DetectResponse | null>(null)
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleDetection | undefined>()
   const [selectedPart, setSelectedPart] = useState<PartDetection | undefined>()
@@ -63,6 +72,22 @@ export default function App() {
   const [listening, setListening] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
   const recognitionCtor = useMemo(() => getRecognition(), [])
+
+  const resetDetectionState = useCallback(() => {
+    frameIdRef.current = 0
+    lastDetectionRef.current = null
+    setDetection(null)
+    setSelectedVehicle(undefined)
+    setSelectedPart(undefined)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const timer = window.setInterval(async () => {
@@ -83,6 +108,8 @@ export default function App() {
           videoTime: video.currentTime,
           width: video.videoWidth,
           height: video.videoHeight,
+          brand: vehicleProfile.brand,
+          model: vehicleProfile.model,
         })
         const smoothed = smoothDetection(lastDetectionRef.current, result)
         lastDetectionRef.current = smoothed
@@ -98,15 +125,36 @@ export default function App() {
       }
     }, 250)
     return () => window.clearInterval(timer)
-  }, [selectedVehicle])
+  }, [selectedVehicle, vehicleProfile])
 
   const handleSelectPart = useCallback((vehicle: VehicleDetection, part: PartDetection) => {
     setSelectedVehicle(vehicle)
     setSelectedPart(part)
     if (autoSpeak) {
-      speak(`当前画面聚焦到${part.name}区域。${part.physical_info.description}`)
+      speak(`当前画面聚焦到${vehicle.brand}${vehicle.model}的${part.name}区域。${part.physical_info.description}`)
     }
   }, [autoSpeak])
+
+  const handleVideoFile = useCallback((file: File) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+    }
+    const url = URL.createObjectURL(file)
+    objectUrlRef.current = url
+    setVideoSrc(url)
+    setVideoName(file.name)
+    resetDetectionState()
+  }, [resetDetectionState])
+
+  const restoreDefaultVideo = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+    setVideoSrc(DEFAULT_VIDEO)
+    setVideoName('默认演示视频')
+    resetDetectionState()
+  }, [resetDetectionState])
 
   const submitQuestion = useCallback(async (text = question) => {
     const content = text.trim()
@@ -168,14 +216,57 @@ export default function App() {
 
       <section className="workspace">
         <div className="ar-stage">
-          <VideoPlayer ref={videoRef} src={videoSrc} onSourceChange={setVideoSrc} />
+          <VideoPlayer ref={videoRef} src={videoSrc} />
           <AROverlay detection={detection} selectedPart={selectedPart} onSelectPart={handleSelectPart} />
         </div>
 
         <aside className="side-panel">
           <div className="panel-card">
+            <h2>视频源</h2>
+            <p>当前：{videoName}</p>
+            <label className="side-file-picker">
+              选择本地汽车视频
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) {
+                    handleVideoFile(file)
+                  }
+                }}
+              />
+            </label>
+            <button onClick={restoreDefaultVideo} type="button">恢复默认视频</button>
+          </div>
+
+          <div className="panel-card">
+            <h2>车型选择</h2>
+            <select
+              className="vehicle-select"
+              value={`${vehicleProfile.brand}|${vehicleProfile.model}`}
+              onChange={(event) => {
+                const [brand, model] = event.target.value.split('|')
+                const next = VEHICLE_PROFILES.find((item) => item.brand === brand && item.model === model)
+                if (next) {
+                  setVehicleProfile(next)
+                  resetDetectionState()
+                }
+              }}
+            >
+              {VEHICLE_PROFILES.map((profile) => (
+                <option key={`${profile.brand}-${profile.model}`} value={`${profile.brand}|${profile.model}`}>
+                  {profile.label}
+                </option>
+              ))}
+            </select>
+            <p className="hint">当前阶段为手动车型选择，不代表已接入视觉车型识别模型。</p>
+          </div>
+
+          <div className="panel-card">
             <h2>当前聚焦</h2>
-            <p>车辆：{selectedVehicle?.model ?? '等待识别'}</p>
+            <p>品牌：{selectedVehicle?.brand ?? vehicleProfile.brand}</p>
+            <p>车型：{selectedVehicle?.model ?? vehicleProfile.model}</p>
             <p>部位：{selectedPart?.name ?? '等待选择'}</p>
             <p>说明：{selectedPart?.physical_info.description ?? '播放视频后系统会实时检测车辆。'}</p>
           </div>

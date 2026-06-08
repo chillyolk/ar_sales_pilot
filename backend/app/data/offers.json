@@ -24,5 +24,31 @@
     "finance_policy": "可与金融贴息政策叠加，以门店确认为准",
     "valid_until": "2026-06-30",
     "sales_note": "适合关注外观和运动感的客户。"
+  },
+  {
+    "id": "offer_tesla_y_001",
+    "model": "Model Y",
+    "city": "北京",
+    "dealer": "懂车帝新能源体验中心朝阳店",
+    "title": "Model Y 到店试驾权益",
+    "description": "到店试驾可享精品礼包和金融方案咨询服务。",
+    "cash_discount": 5000,
+    "gift": ["精品脚垫", "玻璃膜权益", "上牌咨询服务"],
+    "finance_policy": "低首付金融方案，以门店当天政策为准",
+    "valid_until": "2026-06-30",
+    "sales_note": "适合关注家庭空间和纯电通勤成本的客户。"
+  },
+  {
+    "id": "offer_su7_001",
+    "model": "SU7",
+    "city": "北京",
+    "dealer": "懂车帝智能汽车体验中心",
+    "title": "SU7 运动配置咨询权益",
+    "description": "到店可享配置对比讲解和运动轮毂权益咨询。",
+    "cash_discount": 3000,
+    "gift": ["试驾预约优先", "精品抵扣券", "轮胎养护服务"],
+    "finance_policy": "可咨询分期金融和置换补贴组合方案",
+    "valid_until": "2026-06-30",
+    "sales_note": "适合关注运动外观、智能座舱和性能表现的客户。"
   }
 ]

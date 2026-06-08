@@ -26,6 +26,7 @@ class VehicleDetection(BaseModel):
     class_name: str
     confidence: float
     bbox: list[int]
+    brand: str = "演示品牌"
     model: str = "演示车型"
     parts: list[PartDetection]
 
@@ -43,6 +44,7 @@ class DetectResponse(BaseModel):
 class CurrentVehicle(BaseModel):
     track_id: Optional[int] = None
     class_name: Optional[str] = None
+    brand: Optional[str] = "演示品牌"
     model: Optional[str] = "演示车型"
 
 

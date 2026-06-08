@@ -15,6 +15,7 @@ export async function askGuide(params: {
         ? {
             track_id: params.vehicle.track_id,
             class_name: params.vehicle.class_name,
+            brand: params.vehicle.brand,
             model: params.vehicle.model,
           }
         : undefined,

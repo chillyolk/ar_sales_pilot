@@ -6,6 +6,8 @@ export async function detectFrame(params: {
   videoTime: number
   width: number
   height: number
+  brand: string
+  model: string
 }): Promise<DetectResponse> {
   const form = new FormData()
   form.append('frame', params.frame, `frame-${params.frameId}.jpg`)
@@ -13,6 +15,8 @@ export async function detectFrame(params: {
   form.append('video_time', String(params.videoTime))
   form.append('width', String(params.width))
   form.append('height', String(params.height))
+  form.append('brand', params.brand)
+  form.append('model', params.model)
 
   const response = await fetch('/api/detect-frame', {
     method: 'POST',

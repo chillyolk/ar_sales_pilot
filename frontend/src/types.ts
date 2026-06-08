@@ -19,8 +19,15 @@ export type VehicleDetection = {
   class_name: string
   confidence: number
   bbox: [number, number, number, number]
+  brand: string
   model: string
   parts: PartDetection[]
+}
+
+export type VehicleProfile = {
+  brand: string
+  model: string
+  label: string
 }
 
 export type DetectResponse = {

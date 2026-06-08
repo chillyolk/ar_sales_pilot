@@ -35,15 +35,16 @@ class VehicleDetector:
             self.yolo_available = False
             self.model_name = "fallback-contour"
 
-    def detect(self, image: np.ndarray) -> list[dict]:
+    def detect(self, image: np.ndarray, brand: str = "演示品牌", model: str = "演示车型") -> list[dict]:
         if self.yolo_available and self.model is not None:
             detections = self._detect_with_yolo(image)
         else:
             detections = self._detect_with_fallback(image)
         tracked = self.tracker.assign(detections)
         for item in tracked:
-            item["parts"] = estimate_parts(item["bbox"])
-            item["model"] = "演示车型"
+            item["brand"] = brand
+            item["model"] = model
+            item["parts"] = estimate_parts(item["bbox"], model=model)
         return tracked
 
     def _detect_with_yolo(self, image: np.ndarray) -> list[dict]:

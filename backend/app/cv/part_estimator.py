@@ -12,8 +12,10 @@ def _load_knowledge() -> dict:
 KNOWLEDGE = _load_knowledge()
 
 
-def _part_info(part_id: str) -> dict:
-    data = KNOWLEDGE.get(part_id, KNOWLEDGE.get("body", {}))
+def _part_info(part_id: str, model: str = "演示车型") -> dict:
+    model_parts = KNOWLEDGE.get("models", {}).get(model, {}).get("parts", {})
+    default_parts = KNOWLEDGE.get("default", {}).get("parts", {})
+    data = model_parts.get(part_id) or default_parts.get(part_id) or default_parts.get("body", {})
     return {
         "title": data.get("title", "车辆部件"),
         "description": data.get("description", "当前画面识别到车辆相关部件。"),
@@ -30,7 +32,7 @@ def _anchor(box: list[int]) -> list[int]:
     return [round((x1 + x2) / 2), round((y1 + y2) / 2)]
 
 
-def estimate_parts(vehicle_bbox: list[int]) -> list[dict]:
+def estimate_parts(vehicle_bbox: list[int], model: str = "演示车型") -> list[dict]:
     x1, y1, x2, y2 = vehicle_bbox
     w = x2 - x1
     h = y2 - y1
@@ -52,7 +54,7 @@ def estimate_parts(vehicle_bbox: list[int]) -> list[dict]:
             "method": "geometry",
             "bbox": box,
             "anchor": _anchor(box),
-            "physical_info": _part_info(part_id),
+            "physical_info": _part_info(part_id, model=model),
         }
         for part_id, name, confidence, box in definitions
     ]

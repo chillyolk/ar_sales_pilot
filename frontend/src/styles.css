@@ -13,7 +13,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -71,10 +72,6 @@ h2 {
   box-shadow: 0 0 40px rgba(0, 220, 255, 0.14);
 }
 
-.video-shell {
-  position: relative;
-}
-
 .ar-video {
   display: block;
   width: 100%;
@@ -83,29 +80,12 @@ h2 {
   background: #000;
 }
 
-.file-picker {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  z-index: 5;
-  padding: 8px 12px;
-  border: 1px solid rgba(121, 247, 255, 0.4);
-  border-radius: 999px;
-  color: #dffcff;
-  background: rgba(0, 20, 30, 0.72);
-  cursor: pointer;
-}
-
-.file-picker input {
-  display: none;
-}
-
 .ar-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(transparent 92%, rgba(69, 255, 240, 0.08) 92%);
-  background-size: 100% 22px;
+  background: linear-gradient(transparent 94%, rgba(69, 255, 240, 0.035) 94%);
+  background-size: 100% 26px;
 }
 
 .ar-overlay.idle {
@@ -121,8 +101,8 @@ h2 {
   right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, #63fff3, transparent);
-  animation: scan 3s linear infinite;
-  opacity: 0.75;
+  animation: scan 4s linear infinite;
+  opacity: 0.28;
 }
 
 @keyframes scan {
@@ -130,101 +110,113 @@ h2 {
   to { top: 100%; }
 }
 
-.vehicle-box,
-.part-box {
+.part-callout {
   position: absolute;
-  border: 2px solid rgba(81, 250, 255, 0.9);
-  border-radius: 10px;
-  box-shadow: 0 0 18px rgba(81, 250, 255, 0.32), inset 0 0 16px rgba(81, 250, 255, 0.08);
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.94;
 }
 
-.vehicle-box span {
+.part-callout.active {
+  opacity: 1;
+}
+
+.part-marker {
   position: absolute;
-  left: 8px;
-  top: -28px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  color: #001114;
-  background: #67f7ff;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.part-box {
-  pointer-events: auto;
-  border-color: rgba(255, 218, 102, 0.9);
-  background: rgba(255, 218, 102, 0.08);
-  cursor: pointer;
-}
-
-.part-box.active {
-  border-color: #ff7b54;
-  background: rgba(255, 123, 84, 0.2);
-}
-
-.part-dot {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 10px;
-  height: 10px;
+  z-index: 4;
+  width: 14px;
+  height: 14px;
+  padding: 0;
   transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 251, 211, 0.95);
   border-radius: 999px;
   background: #ffd866;
-  box-shadow: 0 0 16px #ffd866;
+  box-shadow: 0 0 0 7px rgba(255, 216, 102, 0.14), 0 0 22px rgba(255, 216, 102, 0.85);
+  pointer-events: auto;
+  transition: left 420ms ease-out, top 420ms ease-out, transform 180ms ease-out;
 }
 
-.part-label {
+.part-marker:hover,
+.part-callout.active .part-marker {
+  transform: translate(-50%, -50%) scale(1.22);
+  background: #ff8b5c;
+  box-shadow: 0 0 0 9px rgba(255, 139, 92, 0.15), 0 0 24px rgba(255, 139, 92, 0.9);
+}
+
+.part-marker span {
   position: absolute;
-  right: -10px;
-  top: -26px;
-  padding: 3px 7px;
-  border-radius: 8px;
-  color: #fff7d1;
-  background: rgba(44, 33, 0, 0.82);
+  left: 16px;
+  top: -7px;
+  color: #fff6ce;
   font-size: 12px;
   white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
 }
 
-.info-card {
+.part-connector {
   position: absolute;
-  width: 210px;
-  transform: translate(18px, -50%);
-  padding: 10px;
-  border: 1px solid rgba(121, 247, 255, 0.42);
-  border-radius: 12px;
-  color: #eaffff;
-  background: rgba(1, 17, 24, 0.78);
-  backdrop-filter: blur(8px);
+  z-index: 2;
+  height: 1px;
+  transform-origin: 0 0;
+  background: linear-gradient(90deg, rgba(255, 216, 102, 0.85), rgba(121, 247, 255, 0.38));
+  box-shadow: 0 0 10px rgba(255, 216, 102, 0.32);
+  transition: left 420ms ease-out, top 420ms ease-out, width 420ms ease-out, transform 420ms ease-out;
 }
 
-.info-card p {
-  margin: 6px 0;
+.part-info-card {
+  position: absolute;
+  z-index: 3;
+  width: 240px;
+  min-height: 92px;
+  padding: 12px;
+  border: 1px solid rgba(121, 247, 255, 0.36);
+  border-radius: 14px;
+  color: #eaffff;
+  text-align: left;
+  background: rgba(1, 17, 24, 0.82);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34), inset 0 0 18px rgba(121, 247, 255, 0.05);
+  pointer-events: auto;
+  transition: left 520ms ease-out, top 520ms ease-out, opacity 220ms ease-out, transform 220ms ease-out;
+}
+
+.part-info-card:hover,
+.part-callout.active .part-info-card {
+  border-color: rgba(255, 216, 102, 0.66);
+  transform: translateY(-2px);
+}
+
+.part-info-card strong {
+  display: block;
+  color: #fff2b0;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.part-info-card p {
   color: rgba(232, 251, 255, 0.82);
   font-size: 12px;
+  line-height: 1.45;
+  margin-bottom: 8px;
 }
 
-.info-card small {
+.part-info-card small {
   color: #8ffaff;
-}
-
-.card-1,
-.card-3 {
-  transform: translate(-105%, -50%);
+  font-size: 11px;
 }
 
 .debug-panel {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 230px;
-  padding: 12px;
-  border: 1px solid rgba(121, 247, 255, 0.42);
+  width: 210px;
+  padding: 10px;
+  border: 1px solid rgba(121, 247, 255, 0.24);
   border-radius: 14px;
-  color: #bdfaff;
-  background: rgba(0, 16, 24, 0.76);
-  font-size: 12px;
-  line-height: 1.65;
+  color: rgba(189, 250, 255, 0.78);
+  background: rgba(0, 16, 24, 0.5);
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .side-panel {
@@ -249,6 +241,11 @@ h2 {
   line-height: 1.5;
 }
 
+.hint {
+  font-size: 12px;
+  color: rgba(232, 251, 255, 0.62) !important;
+}
+
 .voice-panel {
   display: flex;
   flex-wrap: wrap;
@@ -256,7 +253,8 @@ h2 {
   align-items: center;
 }
 
-button {
+button,
+.side-file-picker {
   border: 1px solid rgba(121, 247, 255, 0.38);
   border-radius: 999px;
   padding: 8px 12px;
@@ -268,6 +266,26 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.side-file-picker {
+  display: inline-flex;
+  width: fit-content;
+  margin: 8px 8px 0 0;
+}
+
+.side-file-picker input {
+  display: none;
+}
+
+.vehicle-select {
+  width: 100%;
+  border: 1px solid rgba(121, 247, 255, 0.28);
+  border-radius: 12px;
+  padding: 9px 10px;
+  color: #eaffff;
+  outline: none;
+  background: rgba(0, 8, 12, 0.72);
 }
 
 .chat-panel {

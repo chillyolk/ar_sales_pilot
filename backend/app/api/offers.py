@@ -17,17 +17,19 @@ def load_offers() -> list[dict]:
 
 def find_offers(model: Optional[str] = None, city: Optional[str] = None, part: Optional[str] = None) -> list[dict]:
     offers = load_offers()
-    result = []
-    for offer in offers:
-        if model and offer.get("model") not in {model, "演示车型"}:
-            continue
+
+    def matches(offer: dict, allow_demo: bool) -> bool:
+        if model and offer.get("model") != model:
+            if not allow_demo or offer.get("model") != "演示车型":
+                return False
         if city and offer.get("city") != city:
-            continue
-        if part and part.startswith("wheel") and "轮毂" not in offer.get("title", "") and "轮毂" not in offer.get("description", ""):
-            if offer.get("id") != "offer_001":
-                continue
-        result.append(offer)
-    return result
+            return False
+        return True
+
+    exact = [offer for offer in offers if matches(offer, allow_demo=False)]
+    if exact:
+        return exact
+    return [offer for offer in offers if matches(offer, allow_demo=True)]
 
 
 @router.get("/api/offers")

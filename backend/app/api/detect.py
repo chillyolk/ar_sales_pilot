@@ -17,6 +17,8 @@ async def detect_frame(
     video_time: float = Form(0),
     width: int = Form(0),
     height: int = Form(0),
+    brand: str = Form("演示品牌"),
+    model: str = Form("演示车型"),
 ) -> DetectResponse:
     started = time.perf_counter()
     try:
@@ -25,7 +27,7 @@ async def detect_frame(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     image_height, image_width = image.shape[:2]
-    vehicles = detector.detect(image)
+    vehicles = detector.detect(image, brand=brand, model=model)
     latency_ms = round((time.perf_counter() - started) * 1000)
     return DetectResponse(
         frame_id=frame_id,
