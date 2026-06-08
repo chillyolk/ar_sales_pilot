@@ -1,0 +1,32 @@
+{
+  "body": {
+    "title": "高刚性车身结构",
+    "description": "车身结构直接影响安全性、操控稳定性和整车质感。",
+    "selling_points": ["提升碰撞安全", "增强操控稳定", "改善 NVH 表现"]
+  },
+  "window": {
+    "title": "隔热车窗",
+    "description": "隔热玻璃可以降低阳光直射带来的座舱升温。",
+    "selling_points": ["提升乘坐舒适性", "降低空调负荷", "增强隐私性"]
+  },
+  "wheel_left": {
+    "title": "低风阻轮毂",
+    "description": "轮毂造型会影响风阻、续航、制动散热和运动视觉效果。",
+    "selling_points": ["降低风阻", "提升视觉运动感", "兼顾续航表现"]
+  },
+  "wheel_right": {
+    "title": "低风阻轮毂",
+    "description": "轮毂造型会影响风阻、续航、制动散热和运动视觉效果。",
+    "selling_points": ["降低风阻", "提升视觉运动感", "兼顾续航表现"]
+  },
+  "headlight": {
+    "title": "智能大灯",
+    "description": "车灯影响夜间照明、安全识别和整车科技观感。",
+    "selling_points": ["提升夜间视野", "增强识别度", "提升科技感"]
+  },
+  "front": {
+    "title": "前脸空气动力学设计",
+    "description": "前脸设计会影响风阻、散热和车辆视觉姿态。",
+    "selling_points": ["降低风阻", "优化散热", "增强品牌辨识度"]
+  }
+}

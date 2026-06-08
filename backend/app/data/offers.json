@@ -1,0 +1,28 @@
+[
+  {
+    "id": "offer_001",
+    "model": "演示车型",
+    "city": "北京",
+    "dealer": "懂车帝体验中心朝阳店",
+    "title": "限时购车权益",
+    "description": "指定车型可享现金优惠和精品礼包。",
+    "cash_discount": 8000,
+    "gift": ["充电桩安装服务", "首年基础保养", "精品脚垫"],
+    "finance_policy": "两年低息金融方案，首付最低15%",
+    "valid_until": "2026-06-30",
+    "sales_note": "现车较少，建议提前预约试驾。"
+  },
+  {
+    "id": "offer_002",
+    "model": "演示车型",
+    "city": "北京",
+    "dealer": "懂车帝体验中心朝阳店",
+    "title": "轮毂升级权益",
+    "description": "指定配置可享轮毂升级或精品抵扣权益。",
+    "cash_discount": 0,
+    "gift": ["轮毂精品抵扣券", "轮胎养护服务"],
+    "finance_policy": "可与金融贴息政策叠加，以门店确认为准",
+    "valid_until": "2026-06-30",
+    "sales_note": "适合关注外观和运动感的客户。"
+  }
+]
