@@ -2,7 +2,7 @@ import type { DetectResponse, PartDetection, VehicleDetection } from '../types'
 
 const DEFAULT_ALPHA = 0.28
 const DEAD_ZONE_PX = 3
-const MAX_MISSING_FRAMES = 4
+const MAX_MISSING_FRAMES = 0
 
 type MutablePart = PartDetection & { missingFrames?: number }
 type MutableVehicle = VehicleDetection & { missingFrames?: number; parts: MutablePart[] }
@@ -26,6 +26,9 @@ function smoothParts(previous: MutablePart[], next: PartDetection[], alpha: numb
   const merged: MutablePart[] = next.map((part) => {
     const matched = previous.find((item) => item.part_id === part.part_id)
     if (!matched) {
+      return { ...part, missingFrames: 0 }
+    }
+    if (part.method.startsWith('segmentation') || part.method.startsWith('tracking')) {
       return { ...part, missingFrames: 0 }
     }
     return {

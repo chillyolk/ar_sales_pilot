@@ -23,6 +23,8 @@ backend/.env
 
 # model weights, local videos, and generated artifacts
 backend/models/*.pt
+backend/*.pt
+*.pt
 *.onnx
 *.engine
 *.pth
@@ -32,6 +34,25 @@ backend/models/*.pt
 *.avi
 *.mkv
 plan1.md
+plan2.md
+
+# local datasets and training outputs
+backend/datasets/
+backend/runs/
+backend/outputs/
+runs/
+outputs/
+
+# annotation exports and local Label Studio artifacts
+*.jsonl
+*.cvat.xml
+*.coco.json
+*.zip
+label_studio.sqlite3
+labelstudio-venv/
+media/
+export/
+project-*/
 
 # logs
 *.log

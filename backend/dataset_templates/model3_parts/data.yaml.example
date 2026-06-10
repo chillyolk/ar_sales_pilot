@@ -1,0 +1,10 @@
+path: /Users/bytedance/ar_sale_pilot/backend/datasets/model3_parts
+train: images/train
+val: images/val
+
+names:
+  0: windshield
+  1: hood
+  2: wheel
+  3: side_window
+  4: headlight

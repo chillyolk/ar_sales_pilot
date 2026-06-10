@@ -12,6 +12,7 @@ export type PartDetection = {
   bbox: [number, number, number, number]
   anchor: [number, number]
   physical_info: PhysicalInfo
+  polygon?: [number, number][]
 }
 
 export type VehicleDetection = {

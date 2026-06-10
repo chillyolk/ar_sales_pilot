@@ -6,7 +6,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from app.cv.part_estimator import estimate_parts
+from app.cv.part_segmenter import PartSegmenter
 from app.cv.vehicle_tracker import VehicleTracker
 
 VEHICLE_CLASS_NAMES = {"car", "truck", "bus", "motorcycle"}
@@ -16,6 +16,7 @@ COCO_FALLBACK_LABEL = "car"
 class VehicleDetector:
     def __init__(self) -> None:
         self.tracker = VehicleTracker()
+        self.part_segmenter = PartSegmenter()
         self.model_name = "YOLOv8n"
         self.model = None
         self.yolo_available = False
@@ -40,12 +41,22 @@ class VehicleDetector:
             detections = self._detect_with_yolo(image)
         else:
             detections = self._detect_with_fallback(image)
+        detections = self._select_primary_vehicle(detections)
         tracked = self.tracker.assign(detections)
         for item in tracked:
             item["brand"] = brand
             item["model"] = model
-            item["parts"] = estimate_parts(item["bbox"], model=model)
+            item["parts"] = self.part_segmenter.segment_parts(image, item["bbox"], model=model)
         return tracked
+
+    def _select_primary_vehicle(self, detections: list[dict]) -> list[dict]:
+        if not detections:
+            return []
+        primary = max(
+            detections,
+            key=lambda item: (item["bbox"][2] - item["bbox"][0]) * (item["bbox"][3] - item["bbox"][1]),
+        )
+        return [primary]
 
     def _detect_with_yolo(self, image: np.ndarray) -> list[dict]:
         results = self.model.predict(image, imgsz=640, conf=0.35, verbose=False)
@@ -71,6 +82,10 @@ class VehicleDetector:
         height, width = image.shape[:2]
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, 80, 160)
+        edge_ratio = float(np.count_nonzero(edges)) / float(edges.size)
+        if float(np.mean(gray)) < 18 or edge_ratio < 0.003:
+            return []
+
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         candidates: list[tuple[int, list[int]]] = []
         min_area = width * height * 0.04
@@ -80,8 +95,7 @@ class VehicleDetector:
             ratio = w / h if h else 0
             if area >= min_area and 1.2 <= ratio <= 5.5:
                 candidates.append((area, [x, y, x + w, y + h]))
-        if candidates:
-            _, bbox = max(candidates, key=lambda item: item[0])
-        else:
-            bbox = [round(width * 0.18), round(height * 0.22), round(width * 0.82), round(height * 0.82)]
+        if not candidates:
+            return []
+        _, bbox = max(candidates, key=lambda item: item[0])
         return [{"class_name": COCO_FALLBACK_LABEL, "confidence": 0.35, "bbox": bbox}]

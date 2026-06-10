@@ -19,6 +19,7 @@ class PartDetection(BaseModel):
     bbox: list[int]
     anchor: list[int]
     physical_info: PhysicalInfo
+    polygon: Optional[list[list[int]]] = None
 
 
 class VehicleDetection(BaseModel):
