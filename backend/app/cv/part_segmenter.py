@@ -67,6 +67,18 @@ def _polygon_anchor(polygon: list[list[int]], bbox: list[int]) -> list[int]:
     return [round((bbox[0] + bbox[2]) / 2), round((bbox[1] + bbox[3]) / 2)]
 
 
+def _stable_part_id(class_name: str, index: int, total: int) -> str:
+    if class_name not in {"headlight", "wheel"}:
+        return class_name
+    if total == 1:
+        return f"{class_name}_left" if index == 0 else f"{class_name}_right"
+    if index == 0:
+        return f"{class_name}_left"
+    if index == 1:
+        return f"{class_name}_right"
+    return f"{class_name}_{index + 1}"
+
+
 class PartSegmenter:
     def __init__(self) -> None:
         self.model = None
@@ -101,8 +113,7 @@ class PartSegmenter:
         if not results:
             return []
 
-        parts: list[dict] = []
-        class_counts: dict[str, int] = {}
+        candidates_by_class: dict[str, list[dict]] = {}
         result = results[0]
         if result.boxes is None or result.masks is None:
             return []
@@ -122,15 +133,11 @@ class PartSegmenter:
             if not polygon:
                 continue
 
-            class_counts[class_name] = class_counts.get(class_name, 0) + 1
-            suffix = class_counts[class_name]
-            part_id = class_name if suffix == 1 and class_name not in {"wheel", "headlight"} else f"{class_name}_{suffix}"
-            label = CLASS_NAME_TO_LABEL.get(class_name, class_name)
             anchor = _polygon_anchor(polygon, bbox)
-            parts.append(
+            candidates_by_class.setdefault(class_name, []).append(
                 {
-                    "part_id": part_id,
-                    "name": label,
+                    "class_name": class_name,
+                    "name": CLASS_NAME_TO_LABEL.get(class_name, class_name),
                     "confidence": round(confidence, 3),
                     "method": "segmentation-yolov8n-seg",
                     "bbox": bbox,
@@ -139,5 +146,14 @@ class PartSegmenter:
                     "physical_info": _part_info(class_name, model=model),
                 }
             )
+
+        parts: list[dict] = []
+        for class_name, candidates in candidates_by_class.items():
+            ordered = sorted(candidates, key=lambda item: item["anchor"][0]) if class_name in {"headlight", "wheel"} else candidates
+            total = len(ordered)
+            for index, candidate in enumerate(ordered):
+                candidate["part_id"] = _stable_part_id(class_name, index, total)
+                candidate.pop("class_name", None)
+                parts.append(candidate)
 
         return parts

@@ -52,15 +52,15 @@ h1 {
 }
 
 h2 {
-  font-size: 16px;
-  margin-bottom: 12px;
+  font-size: 14px;
+  margin-bottom: 6px;
   color: #79f7ff;
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(720px, 1fr) 380px;
-  gap: 18px;
+  grid-template-columns: minmax(720px, 1fr) 300px;
+  gap: 12px;
 }
 
 .ar-stage {
@@ -180,10 +180,13 @@ h2 {
 }
 
 .connector-line {
-  stroke: rgba(255, 216, 102, 0.78);
-  stroke-width: 0.14;
+  fill: none;
+  stroke: rgba(248, 255, 61, 0.78);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 4px rgba(255, 216, 102, 0.42));
+  filter: drop-shadow(0 0 2px rgba(248, 255, 61, 0.35));
 }
 
 .part-mask {
@@ -201,43 +204,50 @@ h2 {
 .part-info-card {
   position: absolute;
   z-index: 3;
-  width: 240px;
-  min-height: 92px;
-  padding: 12px;
-  border: 1px solid rgba(121, 247, 255, 0.36);
-  border-radius: 14px;
+  width: 220px;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   color: #eaffff;
   text-align: left;
-  background: rgba(1, 17, 24, 0.82);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34), inset 0 0 18px rgba(121, 247, 255, 0.05);
+  background: transparent;
+  box-shadow: none;
   pointer-events: auto;
-  transition: opacity 220ms ease-out, transform 180ms ease-out, border-color 180ms ease-out;
+  transition: opacity 220ms ease-out, transform 180ms ease-out;
 }
 
 .part-info-card:hover,
 .part-info-card.active {
-  border-color: rgba(255, 216, 102, 0.66);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .part-info-card strong {
   display: block;
-  color: #fff2b0;
-  font-size: 14px;
+  color: #f8ff3d;
+  font-size: 15px;
+  line-height: 1.2;
   margin-bottom: 6px;
+  text-shadow: 0 0 12px rgba(248, 255, 61, 0.55);
 }
 
-.part-info-card p {
-  color: rgba(232, 251, 255, 0.82);
-  font-size: 12px;
-  line-height: 1.45;
-  margin-bottom: 8px;
+.part-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
-.part-info-card small {
-  color: #8ffaff;
+.part-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #fff;
+  background: #39ff14;
   font-size: 11px;
+  line-height: 1.2;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .debug-panel {
@@ -257,23 +267,24 @@ h2 {
 .side-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 7px;
 }
 
 .panel-card,
 .empty-card,
 .offer-card {
   border: 1px solid rgba(121, 247, 255, 0.2);
-  border-radius: 18px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 8px;
   background: rgba(2, 19, 28, 0.76);
-  box-shadow: inset 0 0 22px rgba(0, 220, 255, 0.04);
+  box-shadow: inset 0 0 12px rgba(0, 220, 255, 0.04);
 }
 
 .panel-card p {
-  margin: 8px 0;
+  margin: 4px 0;
   color: rgba(232, 251, 255, 0.82);
-  line-height: 1.5;
+  line-height: 1.35;
+  font-size: 12px;
 }
 
 .hint {
@@ -284,43 +295,46 @@ h2 {
 .confidence-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 6px;
 }
 
 .confidence-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 4px 6px;
   border: 1px solid rgba(121, 247, 255, 0.16);
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(0, 8, 12, 0.38);
   color: rgba(232, 251, 255, 0.84);
+  font-size: 12px;
 }
 
 .confidence-row strong {
   color: #fff2b0;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .voice-panel {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 5px;
   align-items: center;
+  font-size: 12px;
 }
 
 button,
 .side-file-picker {
   border: 1px solid rgba(121, 247, 255, 0.38);
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 4px 7px;
   color: #eaffff;
   background: rgba(0, 92, 111, 0.6);
   cursor: pointer;
+  font-size: 12px;
 }
 
 button:disabled {
@@ -341,11 +355,12 @@ button:disabled {
 .vehicle-select {
   width: 100%;
   border: 1px solid rgba(121, 247, 255, 0.28);
-  border-radius: 12px;
-  padding: 9px 10px;
+  border-radius: 8px;
+  padding: 4px 6px;
   color: #eaffff;
   outline: none;
   background: rgba(0, 8, 12, 0.72);
+  font-size: 12px;
 }
 
 .chat-panel {

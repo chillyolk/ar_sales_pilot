@@ -78,7 +78,7 @@ function getRecognition(): RecognitionConstructor | undefined {
 }
 
 function basePartId(partId: string) {
-  return partId.replace(/_\d+$/, '')
+  return partId.replace(/_(left|right|\d+)$/, '')
 }
 
 function guideIntro(part: PartDetection) {
@@ -161,7 +161,6 @@ export default function App() {
         setDetection(smoothed)
         if (!selectedVehicle && smoothed.vehicles[0]) {
           setSelectedVehicle(smoothed.vehicles[0])
-          setSelectedPart(smoothed.vehicles[0].parts[0])
         }
       } catch (error) {
         console.warn(error)

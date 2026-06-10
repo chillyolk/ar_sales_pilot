@@ -7,31 +7,58 @@ type Props = {
 }
 
 type Slot = {
-  x: number
   y: number
-  side: 'left' | 'right'
+  side: 'right'
 }
 
 type CalloutLayout = {
   side: 'left' | 'right'
   marker: { left: string; top: string }
-  card: { left: string; top: string }
-  line: { x1: number; y1: number; x2: number; y2: number }
+  card: { right: string; top: string }
+  path: string
 }
 
-const CARD_WIDTH_PERCENT = 25
-const CARD_HEIGHT_PERCENT = 15
+const CARD_WIDTH_PX = 220
+const CARD_RIGHT_PX = 20
 
 const FIXED_CARD_SLOTS: Record<string, Slot> = {
-  windshield: { x: 72, y: 8, side: 'right' },
-  hood: { x: 72, y: 28, side: 'right' },
-  headlight: { x: 72, y: 52, side: 'right' },
-  side_window: { x: 3, y: 8, side: 'left' },
-  wheel: { x: 3, y: 58, side: 'left' },
+  windshield: { y: 8, side: 'right' },
+  hood: { y: 26, side: 'right' },
+  headlight: { y: 44, side: 'right' },
+  side_window: { y: 62, side: 'right' },
+  wheel: { y: 80, side: 'right' },
+}
+
+const PART_TITLE: Record<string, string> = {
+  windshield: '前挡风玻璃',
+  hood: '引擎盖',
+  wheel: '轮毂',
+  side_window: '侧窗',
+  headlight: '前大灯',
+}
+
+const PART_TAGS: Record<string, string[]> = {
+  windshield: ['开阔视野', '低风阻', '座舱通透', '安全视野'],
+  hood: ['前备箱', '低机舱', '空间利用', '轻量布局'],
+  wheel: ['低风阻', '运动姿态', '续航效率', '操控质感'],
+  side_window: ['低腰线', '侧向视野', '后排通透', '采光舒适'],
+  headlight: ['矩阵全LED', '高清透镜', '自适应调光', '转向补光'],
 }
 
 function basePartId(partId: string) {
-  return partId.replace(/_\d+$/, '')
+  return partId.replace(/_(left|right|\d+)$/, '')
+}
+
+function shouldRenderMask(part: PartDetection) {
+  return basePartId(part.part_id) !== 'body'
+}
+
+function cardTitle(part: PartDetection) {
+  return PART_TITLE[basePartId(part.part_id)] ?? part.name
+}
+
+function cardTags(part: PartDetection) {
+  return PART_TAGS[basePartId(part.part_id)] ?? part.physical_info.selling_points.slice(0, 4)
 }
 
 function isRenderablePart(part: PartDetection) {
@@ -92,15 +119,19 @@ function polygonPoints(part: PartDetection, sourceWidth: number, sourceHeight: n
 
 function calloutStyle(part: PartDetection, sourceWidth: number, sourceHeight: number): CalloutLayout {
   const point = toPercent(part.anchor, sourceWidth, sourceHeight)
-  const slot = FIXED_CARD_SLOTS[basePartId(part.part_id)] ?? { x: 72, y: 72, side: 'right' as const }
-  const lineEndX = slot.side === 'right' ? slot.x : slot.x + CARD_WIDTH_PERCENT
-  const lineEndY = slot.y + CARD_HEIGHT_PERCENT / 2
+  const slot = FIXED_CARD_SLOTS[basePartId(part.part_id)] ?? { y: 80, side: 'right' as const }
+  const cardLeftPercent = ((sourceWidth - CARD_RIGHT_PX - CARD_WIDTH_PX) / sourceWidth) * 100
+  const titleGapPercent = (6 / sourceWidth) * 100
+  const lineEndX = cardLeftPercent - titleGapPercent
+  const lineEndY = slot.y + 2.2
+  const bendX = Math.min(Math.max(point.x + 8, point.x), lineEndX - 4)
+  const path = `M ${point.x} ${point.y} L ${bendX} ${point.y} L ${bendX} ${lineEndY} L ${lineEndX} ${lineEndY}`
 
   return {
     side: slot.side,
     marker: { left: `${point.x}%`, top: `${point.y}%` },
-    card: { left: `${slot.x}%`, top: `${slot.y}%` },
-    line: { x1: point.x, y1: point.y, x2: lineEndX, y2: lineEndY },
+    card: { right: `${CARD_RIGHT_PX}px`, top: `${slot.y}%` },
+    path,
   }
 }
 
@@ -136,7 +167,7 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
       <div className="scan-line subtle" />
       <svg className="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
         {markerCallouts.map(({ vehicle, part, polygon }) => (
-          polygon ? (
+          polygon && shouldRenderMask(part) && selectedPart?.part_id === part.part_id ? (
             <polygon
               key={`${vehicle.track_id}-${part.part_id}-polygon`}
               points={polygon}
@@ -145,12 +176,9 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
           ) : null
         ))}
         {cardCallouts.map(({ vehicle, part, layout }) => (
-          <line
+          <path
             key={`${vehicle.track_id}-${part.part_id}-line`}
-            x1={layout.line.x1}
-            y1={layout.line.y1}
-            x2={layout.line.x2}
-            y2={layout.line.y2}
+            d={layout.path}
             className="connector-line"
           />
         ))}
@@ -180,18 +208,15 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
             onClick={() => onSelectPart(vehicle, part)}
             type="button"
           >
-            <strong>{part.physical_info.title}</strong>
-            <p>{part.physical_info.description}</p>
+            <strong>{cardTitle(part)}</strong>
+            <div className="part-tags">
+              {cardTags(part).map((tag) => (
+                <span className="part-tag" key={tag}>{tag}</span>
+              ))}
+            </div>
           </button>
         )
       })}
-      <div className="debug-panel compact">
-        <div>Detection: {detection.detector}</div>
-        <div>Frame ID: {detection.frame_id}</div>
-        <div>Latency: {detection.latency_ms}ms</div>
-        <div>Vehicles: {detection.vehicles.length}</div>
-        <div>Seg Parts: {markerCallouts.length}</div>
-      </div>
     </div>
   )
 }
