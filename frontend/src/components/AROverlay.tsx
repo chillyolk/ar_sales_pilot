@@ -6,6 +6,12 @@ type Props = {
   onSelectPart: (vehicle: VehicleDetection, part: PartDetection) => void
 }
 
+type Slot = {
+  x: number
+  y: number
+  side: 'left' | 'right'
+}
+
 type CalloutLayout = {
   side: 'left' | 'right'
   marker: { left: string; top: string }
@@ -16,17 +22,56 @@ type CalloutLayout = {
 const CARD_WIDTH_PERCENT = 25
 const CARD_HEIGHT_PERCENT = 15
 
+const FIXED_CARD_SLOTS: Record<string, Slot> = {
+  windshield: { x: 72, y: 8, side: 'right' },
+  hood: { x: 72, y: 28, side: 'right' },
+  headlight: { x: 72, y: 52, side: 'right' },
+  side_window: { x: 3, y: 8, side: 'left' },
+  wheel: { x: 3, y: 58, side: 'left' },
+}
+
+function basePartId(partId: string) {
+  return partId.replace(/_\d+$/, '')
+}
+
 function isRenderablePart(part: PartDetection) {
   return part.method.startsWith('segmentation') || part.method.startsWith('tracking')
 }
 
-function isAnchorVisible(anchor: [number, number], sourceWidth: number, sourceHeight: number) {
-  return anchor[0] >= 0 && anchor[0] <= sourceWidth && anchor[1] >= 0 && anchor[1] <= sourceHeight
+function isPointVisible([x, y]: [number, number], sourceWidth: number, sourceHeight: number) {
+  return x >= 0 && x <= sourceWidth && y >= 0 && y <= sourceHeight
 }
 
 function doesBoxIntersectViewport(box: [number, number, number, number], sourceWidth: number, sourceHeight: number) {
   const [x1, y1, x2, y2] = box
   return x2 > 0 && y2 > 0 && x1 < sourceWidth && y1 < sourceHeight
+}
+
+function polygonHasVisibleArea(polygon: [number, number][] | undefined, sourceWidth: number, sourceHeight: number) {
+  if (!polygon?.length) {
+    return false
+  }
+  const visiblePoints = polygon.filter((point) => isPointVisible(point, sourceWidth, sourceHeight)).length
+  if (visiblePoints >= 3) {
+    return true
+  }
+  const xs = polygon.map(([x]) => x)
+  const ys = polygon.map(([, y]) => y)
+  return doesBoxIntersectViewport(
+    [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] as [number, number, number, number],
+    sourceWidth,
+    sourceHeight,
+  )
+}
+
+function isPartVisible(part: PartDetection, sourceWidth: number, sourceHeight: number) {
+  if (!isRenderablePart(part)) {
+    return false
+  }
+  if (part.polygon?.length) {
+    return polygonHasVisibleArea(part.polygon, sourceWidth, sourceHeight)
+  }
+  return doesBoxIntersectViewport(part.bbox, sourceWidth, sourceHeight)
 }
 
 function toPercent(anchor: [number, number], sourceWidth: number, sourceHeight: number) {
@@ -45,34 +90,16 @@ function polygonPoints(part: PartDetection, sourceWidth: number, sourceHeight: n
     .join(' ')
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
-}
-
-function calloutStyle(
-  part: PartDetection,
-  vehicle: VehicleDetection,
-  sourceWidth: number,
-  sourceHeight: number,
-  index: number,
-): CalloutLayout {
+function calloutStyle(part: PartDetection, sourceWidth: number, sourceHeight: number): CalloutLayout {
   const point = toPercent(part.anchor, sourceWidth, sourceHeight)
-  const vehicleLeft = (vehicle.bbox[0] / sourceWidth) * 100
-  const vehicleRight = (vehicle.bbox[2] / sourceWidth) * 100
-  const leftSpace = vehicleLeft
-  const rightSpace = 100 - vehicleRight
-  const side = rightSpace >= leftSpace ? 'right' : 'left'
-  const cardX = side === 'right' ? clamp(vehicleRight + 3, 3, 100 - CARD_WIDTH_PERCENT - 2) : clamp(vehicleLeft - CARD_WIDTH_PERCENT - 3, 3, 100 - CARD_WIDTH_PERCENT - 2)
-  const stagger = (index % 4) * (CARD_HEIGHT_PERCENT + 2)
-  const baseY = clamp(point.y - CARD_HEIGHT_PERCENT / 2, 3, 100 - CARD_HEIGHT_PERCENT - 3)
-  const cardY = clamp(baseY + stagger, 3, 100 - CARD_HEIGHT_PERCENT - 3)
-  const lineEndX = side === 'right' ? cardX : cardX + CARD_WIDTH_PERCENT
-  const lineEndY = cardY + CARD_HEIGHT_PERCENT / 2
+  const slot = FIXED_CARD_SLOTS[basePartId(part.part_id)] ?? { x: 72, y: 72, side: 'right' as const }
+  const lineEndX = slot.side === 'right' ? slot.x : slot.x + CARD_WIDTH_PERCENT
+  const lineEndY = slot.y + CARD_HEIGHT_PERCENT / 2
 
   return {
-    side,
+    side: slot.side,
     marker: { left: `${point.x}%`, top: `${point.y}%` },
-    card: { left: `${cardX}%`, top: `${cardY}%` },
+    card: { left: `${slot.x}%`, top: `${slot.y}%` },
     line: { x1: point.x, y1: point.y, x2: lineEndX, y2: lineEndY },
   }
 }
@@ -82,25 +109,33 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
     return <div className="ar-overlay idle">等待实时帧识别...</div>
   }
 
-  const callouts = detection.vehicles.flatMap((vehicle) => {
-    const visibleParts = vehicle.parts.filter(
-      (part) => isRenderablePart(part)
-        && isAnchorVisible(part.anchor, detection.width, detection.height)
-        && doesBoxIntersectViewport(part.bbox, detection.width, detection.height),
-    )
-    return visibleParts.map((part, index) => ({
-      vehicle,
-      part,
-      layout: calloutStyle(part, vehicle, detection.width, detection.height, index),
-      polygon: polygonPoints(part, detection.width, detection.height),
-    }))
-  })
+  const markerCallouts = detection.vehicles.flatMap((vehicle) => (
+    vehicle.parts
+      .filter((part) => isPartVisible(part, detection.width, detection.height))
+      .map((part) => ({
+        vehicle,
+        part,
+        layout: calloutStyle(part, detection.width, detection.height),
+        polygon: polygonPoints(part, detection.width, detection.height),
+      }))
+  ))
+
+  const cardCallouts = Array.from(
+    markerCallouts.reduce((items, callout) => {
+      const key = `${callout.vehicle.track_id}-${basePartId(callout.part.part_id)}`
+      const existing = items.get(key)
+      if (!existing || callout.part.confidence > existing.part.confidence) {
+        items.set(key, callout)
+      }
+      return items
+    }, new Map<string, (typeof markerCallouts)[number]>()).values(),
+  )
 
   return (
     <div className="ar-overlay">
       <div className="scan-line subtle" />
       <svg className="connector-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {callouts.map(({ vehicle, part, polygon }) => (
+        {markerCallouts.map(({ vehicle, part, polygon }) => (
           polygon ? (
             <polygon
               key={`${vehicle.track_id}-${part.part_id}-polygon`}
@@ -109,7 +144,7 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
             />
           ) : null
         ))}
-        {callouts.map(({ vehicle, part, layout }) => (
+        {cardCallouts.map(({ vehicle, part, layout }) => (
           <line
             key={`${vehicle.track_id}-${part.part_id}-line`}
             x1={layout.line.x1}
@@ -120,30 +155,34 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
           />
         ))}
       </svg>
-      {callouts.map(({ vehicle, part, layout }) => {
+      {markerCallouts.map(({ vehicle, part, layout }) => {
         const active = selectedPart?.part_id === part.part_id
         return (
-          <div className={`part-callout ${layout.side} ${active ? 'active' : ''}`} key={`${vehicle.track_id}-${part.part_id}`}>
-            <button
-              className="part-marker"
-              style={layout.marker}
-              onClick={() => onSelectPart(vehicle, part)}
-              title={part.name}
-              type="button"
-            >
-              <span>{part.name}</span>
-            </button>
-            <button
-              className="part-info-card"
-              style={layout.card}
-              onClick={() => onSelectPart(vehicle, part)}
-              type="button"
-            >
-              <strong>{part.physical_info.title}</strong>
-              <p>{part.physical_info.description}</p>
-              <small>{vehicle.brand} {vehicle.model} · {part.method} · {(part.confidence * 100).toFixed(0)}%</small>
-            </button>
-          </div>
+          <button
+            className={`part-marker ${active ? 'active' : ''}`}
+            key={`${vehicle.track_id}-${part.part_id}-marker`}
+            style={layout.marker}
+            onClick={() => onSelectPart(vehicle, part)}
+            title={part.name}
+            type="button"
+          >
+            <span>{part.name}</span>
+          </button>
+        )
+      })}
+      {cardCallouts.map(({ vehicle, part, layout }) => {
+        const active = selectedPart?.part_id === part.part_id
+        return (
+          <button
+            className={`part-info-card fixed ${layout.side} ${active ? 'active' : ''}`}
+            key={`${vehicle.track_id}-${part.part_id}-card`}
+            style={layout.card}
+            onClick={() => onSelectPart(vehicle, part)}
+            type="button"
+          >
+            <strong>{part.physical_info.title}</strong>
+            <p>{part.physical_info.description}</p>
+          </button>
         )
       })}
       <div className="debug-panel compact">
@@ -151,7 +190,7 @@ export default function AROverlay({ detection, selectedPart, onSelectPart }: Pro
         <div>Frame ID: {detection.frame_id}</div>
         <div>Latency: {detection.latency_ms}ms</div>
         <div>Vehicles: {detection.vehicles.length}</div>
-        <div>Seg Parts: {callouts.length}</div>
+        <div>Seg Parts: {markerCallouts.length}</div>
       </div>
     </div>
   )

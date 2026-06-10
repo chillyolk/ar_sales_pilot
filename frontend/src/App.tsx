@@ -13,9 +13,18 @@ import type { ChatMessage, DetectResponse, Offer, PartDetection, VehicleDetectio
 const DEFAULT_VIDEO = '/videos/demo-car.mp4'
 
 const VEHICLE_PROFILES: VehicleProfile[] = [
+  { brand: 'Tesla', model: 'Model 3', label: 'Tesla Model 3' },
   { brand: 'Tesla', model: 'Model Y', label: 'Tesla Model Y' },
   { brand: '小米汽车', model: 'SU7', label: '小米 SU7' },
   { brand: '演示品牌', model: '演示车型', label: '通用演示车型' },
+]
+
+const CONFIDENCE_PARTS = [
+  { id: 'windshield', name: '前挡风玻璃' },
+  { id: 'hood', name: '引擎盖' },
+  { id: 'wheel', name: '轮毂' },
+  { id: 'side_window', name: '侧窗' },
+  { id: 'headlight', name: '前大灯' },
 ]
 
 type RecognitionConstructor = new () => SpeechRecognition
@@ -34,15 +43,30 @@ type SpeechRecognitionEvent = {
   results: ArrayLike<ArrayLike<{ transcript: string }>>
 }
 
+function pickChineseVoice() {
+  const voices = window.speechSynthesis.getVoices()
+  return voices.find((voice) => /zh-CN|Chinese|Xiaoxiao|Tingting|Mei-Jia|Sinji/i.test(`${voice.lang} ${voice.name}`))
+    ?? voices.find((voice) => voice.lang.startsWith('zh'))
+}
+
 function speak(text: string) {
   if (!('speechSynthesis' in window)) {
     return
   }
   window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'zh-CN'
-  utterance.rate = 1
-  window.speechSynthesis.speak(utterance)
+  const segments = text.split(/(?<=[。！？；])/).map((segment) => segment.trim()).filter(Boolean)
+  const voice = pickChineseVoice()
+  segments.forEach((segment) => {
+    const utterance = new SpeechSynthesisUtterance(segment)
+    utterance.lang = 'zh-CN'
+    utterance.rate = 0.92
+    utterance.pitch = 1.03
+    utterance.volume = 1
+    if (voice) {
+      utterance.voice = voice
+    }
+    window.speechSynthesis.speak(utterance)
+  })
 }
 
 function getRecognition(): RecognitionConstructor | undefined {
@@ -53,6 +77,25 @@ function getRecognition(): RecognitionConstructor | undefined {
   return scope.SpeechRecognition || scope.webkitSpeechRecognition
 }
 
+function basePartId(partId: string) {
+  return partId.replace(/_\d+$/, '')
+}
+
+function guideIntro(part: PartDetection) {
+  const intros: Record<string, string> = {
+    windshield: '先看前挡风玻璃，这里影响的是前方视野和座舱通透感。',
+    hood: '这里是前舱区域，Model 3 的电动车布局让储物和车头结构更灵活。',
+    wheel: '这里是轮毂，通常客户会关注它对能耗、外观和操控感的影响。',
+    side_window: '这里是侧窗区域，影响侧向视野和后排通透感。',
+    headlight: '这里是前大灯，重点是夜间识别度和前脸科技感。',
+  }
+  return intros[basePartId(part.part_id)] ?? `现在看到的是${part.name}。`
+}
+
+function partSpeechText(vehicle: VehicleDetection, part: PartDetection) {
+  return `${guideIntro(part)}现在看到的是 ${vehicle.brand} ${vehicle.model} 的${part.name}。这个部位的重点是：${part.physical_info.description} 如果你更关注日常体验和用车价值，这一点会比较实用。`
+}
+
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const inFlightRef = useRef(false)
@@ -61,6 +104,8 @@ export default function App() {
   const objectUrlRef = useRef<string | null>(null)
   const [videoSrc, setVideoSrc] = useState(DEFAULT_VIDEO)
   const [videoName, setVideoName] = useState('默认演示视频')
+  const [videoAspectRatio, setVideoAspectRatio] = useState(16 / 9)
+  const [isPlaying, setIsPlaying] = useState(false)
   const [vehicleProfile, setVehicleProfile] = useState<VehicleProfile>(VEHICLE_PROFILES[0])
   const [detection, setDetection] = useState<DetectResponse | null>(null)
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleDetection | undefined>()
@@ -131,7 +176,7 @@ export default function App() {
     setSelectedVehicle(vehicle)
     setSelectedPart(part)
     if (autoSpeak) {
-      speak(`当前画面聚焦到${vehicle.brand}${vehicle.model}的${part.name}区域。${part.physical_info.description}`)
+      speak(partSpeechText(vehicle, part))
     }
   }, [autoSpeak])
 
@@ -143,6 +188,8 @@ export default function App() {
     objectUrlRef.current = url
     setVideoSrc(url)
     setVideoName(file.name)
+    setIsPlaying(false)
+    setVideoAspectRatio(16 / 9)
     resetDetectionState()
   }, [resetDetectionState])
 
@@ -153,8 +200,29 @@ export default function App() {
     }
     setVideoSrc(DEFAULT_VIDEO)
     setVideoName('默认演示视频')
+    setVideoAspectRatio(16 / 9)
+    setIsPlaying(false)
     resetDetectionState()
   }, [resetDetectionState])
+
+  const handleLoadedMetadata = useCallback(() => {
+    const video = videoRef.current
+    if (video?.videoWidth && video.videoHeight) {
+      setVideoAspectRatio(video.videoWidth / video.videoHeight)
+    }
+  }, [])
+
+  const handleTogglePlayback = useCallback(async () => {
+    const video = videoRef.current
+    if (!video) {
+      return
+    }
+    if (video.paused) {
+      await video.play()
+    } else {
+      video.pause()
+    }
+  }, [])
 
   const submitQuestion = useCallback(async (text = question) => {
     const content = text.trim()
@@ -184,6 +252,16 @@ export default function App() {
       setLoading(false)
     }
   }, [autoSpeak, loading, question, selectedPart, selectedVehicle])
+
+  const currentVehicle = detection?.vehicles[0]
+  const confidenceRows = CONFIDENCE_PARTS.map((part) => {
+    const matches = currentVehicle?.parts.filter((item) => basePartId(item.part_id) === part.id) ?? []
+    const best = matches.reduce<PartDetection | undefined>((current, item) => (
+      !current || item.confidence > current.confidence ? item : current
+    ), undefined)
+    return { ...part, confidence: best?.confidence, source: best?.method }
+  })
+  const recognitionSource = confidenceRows.find((row) => row.source)?.source ?? '等待识别'
 
   const startListen = useCallback(() => {
     if (!recognitionCtor) {
@@ -216,8 +294,21 @@ export default function App() {
 
       <section className="workspace">
         <div className="ar-stage">
-          <VideoPlayer ref={videoRef} src={videoSrc} />
-          <AROverlay detection={detection} selectedPart={selectedPart} onSelectPart={handleSelectPart} />
+          <div className="video-viewport" style={{ aspectRatio: videoAspectRatio }}>
+            <VideoPlayer
+              ref={videoRef}
+              src={videoSrc}
+              onClick={handleTogglePlayback}
+              onLoadedMetadata={handleLoadedMetadata}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onEnded={() => setIsPlaying(false)}
+            />
+            <AROverlay detection={detection} selectedPart={selectedPart} onSelectPart={handleSelectPart} />
+            <button className="video-toggle" onClick={handleTogglePlayback} type="button">
+              {isPlaying ? '暂停' : '播放'}
+            </button>
+          </div>
         </div>
 
         <aside className="side-panel">
@@ -261,6 +352,20 @@ export default function App() {
               ))}
             </select>
             <p className="hint">当前阶段为手动车型选择，不代表已接入视觉车型识别模型。</p>
+          </div>
+
+          <div className="panel-card confidence-panel">
+            <h2>置信度</h2>
+            <p>当前识别车型：{currentVehicle ? `${currentVehicle.brand} ${currentVehicle.model}` : `${vehicleProfile.brand} ${vehicleProfile.model}`}</p>
+            <p>部位识别来源：{recognitionSource}</p>
+            <div className="confidence-list">
+              {confidenceRows.map((row) => (
+                <div className="confidence-row" key={row.id}>
+                  <span>{row.name}</span>
+                  <strong>{row.confidence === undefined ? '未识别' : `${Math.round(row.confidence * 100)}%`}</strong>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="panel-card">

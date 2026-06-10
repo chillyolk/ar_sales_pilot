@@ -11,15 +11,25 @@
         "description": "隔热玻璃可以降低阳光直射带来的座舱升温。",
         "selling_points": ["提升乘坐舒适性", "降低空调负荷", "增强隐私性"]
       },
-      "wheel_left": {
-        "title": "低风阻轮毂",
+      "windshield": {
+        "title": "前挡风玻璃",
+        "description": "前挡风玻璃影响前方视野、座舱通透感和驾驶安全感。",
+        "selling_points": ["前方视野", "座舱通透", "驾驶安全感"]
+      },
+      "hood": {
+        "title": "引擎盖",
+        "description": "电动车前舱布局更简洁，能提升空间利用和车头设计灵活度。",
+        "selling_points": ["空间利用", "车头设计", "结构简洁"]
+      },
+      "wheel": {
+        "title": "轮毂",
         "description": "轮毂造型会影响风阻、续航、制动散热和运动视觉效果。",
         "selling_points": ["降低风阻", "提升视觉运动感", "兼顾续航表现"]
       },
-      "wheel_right": {
-        "title": "低风阻轮毂",
-        "description": "轮毂造型会影响风阻、续航、制动散热和运动视觉效果。",
-        "selling_points": ["降低风阻", "提升视觉运动感", "兼顾续航表现"]
+      "side_window": {
+        "title": "侧窗",
+        "description": "侧窗影响侧向视野、座舱通透感和后排乘坐舒适性。",
+        "selling_points": ["侧向视野", "座舱通透", "乘坐舒适"]
       },
       "headlight": {
         "title": "智能大灯",
@@ -34,6 +44,37 @@
     }
   },
   "models": {
+    "Model 3": {
+      "brand": "Tesla",
+      "model": "Model 3",
+      "parts": {
+        "windshield": {
+          "title": "前挡风玻璃：开阔视野与低风阻车身姿态",
+          "description": "Model 3 的前挡风玻璃与低矮车头形成连续视野，驾驶位前方盲区更少，配合简洁座舱设计，能带来更开阔的前方观察感。",
+          "selling_points": ["前方视野开阔", "座舱通透感强", "适合城市通勤和高速巡航"]
+        },
+        "hood": {
+          "title": "引擎盖：电动车低机舱布局与前备箱空间",
+          "description": "Model 3 没有传统燃油发动机，前舱布局更简洁，车头下方可形成前备箱空间，适合放置充电线、小件行李或随车物品。",
+          "selling_points": ["前备箱提升储物灵活性", "车头结构简洁", "电动车空间利用率高"]
+        },
+        "wheel": {
+          "title": "轮毂：兼顾能耗效率和运动姿态",
+          "description": "Model 3 的轮毂设计兼顾空气动力学和运动感，日常通勤更关注能耗表现，运动化轮圈则能提升整车姿态和操控视觉。",
+          "selling_points": ["兼顾续航效率", "运动视觉更明显", "适合关注操控与外观的用户"]
+        },
+        "side_window": {
+          "title": "侧窗：低腰线带来的通透乘坐感",
+          "description": "Model 3 的侧窗区域与车顶线条结合紧凑，坐进车内能获得较好的侧向观察视野，后排乘客也能感受到更通透的乘坐氛围。",
+          "selling_points": ["侧向视野好", "座舱通透", "提升乘坐舒适感"]
+        },
+        "headlight": {
+          "title": "前大灯：简洁科技感与夜间识别度",
+          "description": "Model 3 的前大灯造型简洁，和封闭式前脸融合度高，夜间点亮后辨识度明显，也强化了整车的科技感。",
+          "selling_points": ["夜间识别度高", "前脸更简洁", "科技感强"]
+        }
+      }
+    },
     "Model Y": {
       "brand": "Tesla",
       "model": "Model Y",
@@ -43,12 +84,7 @@
           "description": "Model Y 车身强调低重心和高刚性，有助于提升操控稳定性和乘员安全。",
           "selling_points": ["低重心", "车身刚性高", "空间利用率好"]
         },
-        "wheel_left": {
-          "title": "Model Y 低风阻轮毂",
-          "description": "轮毂造型兼顾空气动力学和城市通勤效率，适合关注续航和日常使用成本的客户。",
-          "selling_points": ["降低风阻", "改善续航", "适合城市通勤"]
-        },
-        "wheel_right": {
+        "wheel": {
           "title": "Model Y 低风阻轮毂",
           "description": "轮毂造型兼顾空气动力学和城市通勤效率，适合关注续航和日常使用成本的客户。",
           "selling_points": ["降低风阻", "改善续航", "适合城市通勤"]
@@ -69,12 +105,7 @@
           "description": "SU7 车身比例偏运动轿跑，强调姿态、风阻表现和操控氛围。",
           "selling_points": ["运动姿态", "低风阻造型", "年轻化设计"]
         },
-        "wheel_left": {
-          "title": "SU7 运动轮毂",
-          "description": "运动化轮毂强化整车视觉张力，也能配合轮胎规格提升抓地表现。",
-          "selling_points": ["运动观感强", "抓地表现好", "适合年轻客户"]
-        },
-        "wheel_right": {
+        "wheel": {
           "title": "SU7 运动轮毂",
           "description": "运动化轮毂强化整车视觉张力，也能配合轮胎规格提升抓地表现。",
           "selling_points": ["运动观感强", "抓地表现好", "适合年轻客户"]
